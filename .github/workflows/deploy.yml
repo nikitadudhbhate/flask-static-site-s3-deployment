@@ -1,4 +1,4 @@
-name: Deploy Static Site to AWS S3
+name: Deploy to S3
 
 on:
   push:
@@ -8,29 +8,44 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v1
 
-    - name: Build Docker image
-      run: docker build -t static-site-generator .
+      - name: Build Docker image
+        run: docker build -t static-site-generator .
 
-    - name: Run Static Site Generator
-      run: docker run --rm -v ${{ github.workspace }}/dist:/app/dist static-site-generator
+      - name: Run the static site generator
+        run: docker run -v ${{ github.workspace }}/static_site:/app/static_site static-site-generator
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
+      - name: Upload static site files
+        uses: actions/upload-artifact@v3
+        with:
+          name: static-site
+          path: ./static_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download static site files
+        uses: actions/download-artifact@v3
+        with:
+          name: static-site
+          path: ./static_site
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-    
-    - name: Sync files to S3
-      run: |
-          aws s3 sync ./static_site s3://${{ secrets.AWS_S3_BUCKET }} --delete --acl public-read
- 
+          aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Sync files to S3
+        run: |
+          aws s3 sync ./static_site s3://${{ secrets.AWS_S3_BUCKET }} --delete --acl public-read
