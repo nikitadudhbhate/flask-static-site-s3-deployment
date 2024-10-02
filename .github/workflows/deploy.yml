@@ -32,4 +32,5 @@ jobs:
     - name: Sync files to S3
       run: |
           aws s3 sync ./static_site s3://${{ secrets.AWS_S3_BUCKET }} --delete --acl public-read
-          
+
+
