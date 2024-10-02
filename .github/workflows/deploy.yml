@@ -21,6 +21,9 @@ jobs:
 
       - name: Run the static site generator
         run: docker run -v ${{ github.workspace }}/static_site:/app/static_site static-site-generator
+      
+      - name: List files before uploading artifact
+        run: ls -la ./static_site
 
       - name: Upload static site files
         uses: actions/upload-artifact@v3
@@ -38,6 +41,9 @@ jobs:
         with:
           name: static-site
           path: ./static_site
+      
+      - name: List files before uploading artifact
+        run: ls -la ./static_site
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
